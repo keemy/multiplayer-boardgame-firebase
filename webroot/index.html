@@ -1,0 +1,62 @@
+<html>
+<head>
+<script type='text/javascript' src='http://static.firebase.com/demo/firebase.js'></script>
+<script type='text/javascript' src='js/mootools-core-1.4.2.js'></script>
+<script type='text/javascript' src='js/mootools-more-1.4.0.1.js'></script>
+<script type='text/javascript'>
+
+(function() {
+
+var braceRef = new Firebase('http://gamma.firebase.com/keemy/brace');
+
+var userId = 0;
+function userCreated(success, user, reason) {
+  if(!success) {
+    userId++;
+    usersRef.child(userId).transaction(createUserTransaction, userCreated);
+    return;
+  }
+  setTimeout(function() {
+    var presenceRef = usersRef.child(userId).child('online');
+    presenceRef.setOnDisconnect(false);
+    presenceRef.set(true);
+  }, 0);
+}
+function createUserTransaction(currentUserData) {
+  if(currentUserData === null) {
+    return { id: userId, name: "Player " + userId };
+  }
+}
+
+var channel, channelRef, usersRef;
+function joinChannel(channel_) {
+  if(channel_ === "") {
+    document.location.hash = "pimps@sea";
+    return;
+  }
+  channel = document.location.hash.substring(1);
+
+  // TODO - check for valid chars?
+  channelRef = braceRef.child(channel);
+  usersRef = channelRef.child('users');
+
+  // TODO - this doesn't scale well, can we store the last used userid somewhere?
+  usersRef.child(userId).transaction(createUserTransaction, userCreated);
+}
+
+function urlChanged() {
+  joinChannel(document.location.hash.substring(1));
+}
+
+window.addEvent('load', function() {
+  window.addEventListener("hashchange", urlChanged, false);
+  urlChanged();
+});
+
+})();
+
+</script>
+</head>
+<body>
+</body>
+</html>
