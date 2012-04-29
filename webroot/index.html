@@ -16,8 +16,14 @@ var braceRef = new Firebase('http://gamma.firebase.com/keemy/brace');
 
 var userId = 0;
 
-var channelName, channelRef, usersRef;
+var channelName, channelRef, usersRef, movesRef, lastMoveIdRef, lastGameIdRef;
+var game;
+var gameId;
 function joinChannel(channel_) {
+  if(movesRef) {
+    movesRef.off('child_added', moveAdded);
+  }
+
   if(channel_ === "") {
     document.location.hash = "pimps@sea";
     return;
@@ -45,22 +51,28 @@ function joinChannel(channel_) {
 
   // TODO - store the game somewhere?
   var gameClass = devin.games[0];
+  if(game) {
+    game.dispose();
+  }
   game = new gameClass(requestMove);
+  game.initialize(gameDiv);
 
-  var lastGameIdRef = channelRef.child('lastGameId');
+  lastGameIdRef = channelRef.child('lastGameId');
   var gamesRef = channelRef.child('games');
   lastGameIdRef.on('value', function(lastGameId) {
-    lastGameId = lastGameId.val() || 0;
-    gameRef = gamesRef.child(lastGameId);
+    gameId = lastGameId.val() || 0;
+    gameRef = gamesRef.child(gameId);
 
-    var movesRef = gameRef.child('moves');
-    movesRef.on('child_added', function(snapshot) {
-      //TODO check if game is finished
-    });
-
-    var seed = channelName + lastGameId;
+    var seed = channelName + gameId;
     var rand = new MersenneTwister(seed);
-    game.initialize(rand);
+    game.setState(rand);
+    windowResized();
+
+    // We can't start reacting to turns until we have initialized our board!
+    movesRef = gameRef.child('moves');
+    movesRef.on('child_added', moveAdded);
+
+    lastMoveIdRef = gameRef.child('lastMoveId');
   });
 }
 
@@ -69,17 +81,54 @@ function urlChanged() {
 }
 
 function requestMove(move) {
+  // TODO - is this really the firebase way?
+  move = JSON.stringify(move);
+
+  lastMoveIdRef.transaction(function(currLastMoveId) {
+    return currLastMoveId + 1;   
+  }, function(success, snapshot) {
+    if(success) {
+      // TODO - i don't see any reason why this would actually provide the
+      // atomicity we are looking for
+      movesRef.push().set(move);
+    }
+  });
+}
+
+function moveAdded(snapshot) {
+  var move = JSON.parse(snapshot.val());
+  game.applyMove(move);
+  if(game.isFinished()) {
+    alert("Game over! Starting a new one...");
+    //TODO - comment on why we don't want to use transaction here...
+    lastGameIdRef.set(gameId+1);
+  }
+}
+
+function windowResized() {
+  var availSpace = window.getSize();
+  availSpace.x -= document.body.getStyle('margin-left').toInt() + document.body.getStyle('margin-right').toInt();
+  availSpace.y -= document.body.getStyle('margin-top').toInt() + document.body.getStyle('margin-bottom').toInt();
+  gameDiv.setStyle('width', availSpace.x);
+  gameDiv.setStyle('height', availSpace.y);
+  if(game) {
+    game.redraw(gameDiv);
+  }
 }
 
 
+var gameDiv;
 window.addEvent('load', function() {
+  gameDiv = document.getElementById('gameDiv');
   window.addEventListener("hashchange", urlChanged, false);
   urlChanged();
+  window.addEvent('resize', windowResized);
 });
 })();
 
 </script>
 </head>
 <body>
+<div id="gameDiv"></div>
 </body>
 </html>
