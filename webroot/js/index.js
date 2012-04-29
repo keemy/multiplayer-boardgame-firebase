@@ -119,7 +119,7 @@ function urlChanged() {
 
 function requestMove(move) {
   // TODO - is this really the firebase way?
-  move = JSON.stringify(move);
+  jsonMove = JSON.stringify(move);
 
   //movesRef.push().set(move);
 
@@ -130,7 +130,7 @@ function requestMove(move) {
     if(success) {
       // TODO - i don't see any reason why this would actually provide the
       // atomicity we are looking for
-      movesRef.push().set(move);
+      movesRef.push().set(jsonMove);
 
       var myself = onlineUsers[userId];
       //TODO query game for value of move
