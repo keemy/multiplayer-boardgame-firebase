@@ -7,154 +7,17 @@
 <script type='text/javascript' src='js/mersenne-twister.js'></script>
 <script type='text/javascript' src='js/Games.js'></script>
 <script type='text/javascript' src='games/ButtonRevenge.js'></script>
+<script type='text/javascript' src='js/index.js'></script>
 
-<script type='text/javascript'>
-
-(function() {
-
-var braceRef = new Firebase('http://gamma.firebase.com/keemy/brace');
-
-function stringToBytes ( str ) {
-  var ch, st, re = [];
-  for (var i = 0; i < str.length; i++ ) {
-    ch = str.charCodeAt(i);  // get char 
-    st = [];                 // set up "stack"
-    do {
-      st.push( ch & 0xFF );  // push byte to stack
-      ch = ch >> 8;          // shift value down by 1 byte
-    }  
-    while ( ch );
-    // add stack contents to result
-    // done because chars have "wrong" endianness
-    re = re.concat( st.reverse() );
-  }
-  var temp2=0;
-  for( i=0; i<re.length; i++) {
-    temp2 ^= re[i];
-  }
-  return temp2;
+<style type="text/css">
+body {
+  overflow: hidden;
 }
+</style>
 
-var userId = 0;
-
-var channelName, channelRef, usersRef, movesRef, lastMoveIdRef, lastGameIdRef;
-var game;
-var gameId;
-function joinChannel(channel_) {
-  if(movesRef) {
-    movesRef.off('child_added', moveAdded);
-  }
-
-  if(channel_ === "") {
-    document.location.hash = "pimps@sea";
-    return;
-  }
-  channelName = document.location.hash.substring(1);
-
-  // TODO - check for valid chars?
-  channelRef = braceRef.child(channelName);
-  usersRef = channelRef.child('users');
-
-  var lastUserIdRef = channelRef.child('lastUserId');
-  lastUserIdRef.transaction(function(lastUserId) {
-    return lastUserId+1;
-  }, function(success, snapshot) {
-    if(success) {
-      userId = snapshot.val();
-
-      var userRef = usersRef.child(userId);
-      userRef.set({ id: userId, name: "Player " + userId });
-      presenceRef = userRef.child('online');
-      presenceRef.setOnDisconnect(false);
-      presenceRef.set(true);
-    }
-  });
-
-  // TODO - store the game somewhere?
-  var gameClass = devin.games[0];
-  if(game) {
-    game.dispose();
-  }
-  game = new gameClass(requestMove);
-  game.initialize(gameDiv);
-
-  lastGameIdRef = channelRef.child('lastGameId');
-  var gamesRef = channelRef.child('games');
-  lastGameIdRef.on('value', function(lastGameId) {
-    gameId = lastGameId.val() || 0;
-    gameRef = gamesRef.child(gameId);
-
-    movesRef = gameRef.child('moves');
-    movesRef.on('child_added', function(snapshot) {
-      //TODO check if game is finished
-    });
-		
-    var seed = stringToBytes(channelName) + lastGameId;
-    var rand = new MersenneTwister(seed);
-    game.setState(rand);
-    windowResized();
-
-    // We can't start reacting to turns until we have initialized our board!
-    movesRef = gameRef.child('moves');
-    movesRef.on('child_added', moveAdded);
-
-    lastMoveIdRef = gameRef.child('lastMoveId');
-  });
-}
-
-function urlChanged() {
-  joinChannel(document.location.hash.substring(1));
-}
-
-function requestMove(move) {
-  // TODO - is this really the firebase way?
-  move = JSON.stringify(move);
-
-  lastMoveIdRef.transaction(function(currLastMoveId) {
-    return currLastMoveId + 1;   
-  }, function(success, snapshot) {
-    if(success) {
-      // TODO - i don't see any reason why this would actually provide the
-      // atomicity we are looking for
-      movesRef.push().set(move);
-    }
-  });
-}
-
-function moveAdded(snapshot) {
-  var move = JSON.parse(snapshot.val());
-  game.applyMove(move);
-  if(game.isFinished()) {
-    alert("Game over! Starting a new one...");
-    //TODO - comment on why we don't want to use transaction here...
-    lastGameIdRef.set(gameId+1);
-  }
-}
-
-function windowResized() {
-  var availSpace = window.getSize();
-  availSpace.x -= document.body.getStyle('margin-left').toInt() + document.body.getStyle('margin-right').toInt();
-  availSpace.y -= document.body.getStyle('margin-top').toInt() + document.body.getStyle('margin-bottom').toInt();
-  gameDiv.setStyle('width', availSpace.x);
-  gameDiv.setStyle('height', availSpace.y);
-  if(game) {
-    game.redraw(gameDiv);
-  }
-}
-
-
-var gameDiv;
-window.addEvent('load', function() {
-  gameDiv = document.getElementById('gameDiv');
-  window.addEventListener("hashchange", urlChanged, false);
-  urlChanged();
-  window.addEvent('resize', windowResized);
-});
-})();
-
-</script>
 </head>
 <body>
 <div id="gameDiv"></div>
+<div id="userList"></div>
 </body>
 </html>

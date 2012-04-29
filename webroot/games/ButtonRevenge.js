@@ -65,7 +65,10 @@ devin.games.push(function(requestMove) {
         button.show();
       }
     }
+  };
 
+  this.moveValue = function(move) {
+    return 1;
   };
 
   this.isFinished = function() {
