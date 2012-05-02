@@ -47,7 +47,8 @@ function joinChannel(channel_) {
   usersRef = channelRef.child('users');
   usersRef.on('child_changed', userJoined);
   usersRef.on('child_added', userJoined);
-
+  
+  
   var lastUserIdRef = channelRef.child('lastUserId');
   lastUserIdRef.transaction(function(lastUserId) {
     return lastUserId+1;
@@ -55,11 +56,14 @@ function joinChannel(channel_) {
     if(success) {
       userId = snapshot.val();
 
+	  var fname=prompt("name: ", "Player "+userId);
+	  
       userRef = usersRef.child(userId);
-      userRef.set({ id: userId, name: "Player " + userId });
-      presenceRef = userRef.child('online');
+      userRef.set({ id: userId, name: fname });
+      userRef.removeOnDisconnect();
+	  /*presenceRef = userRef.child('online');
       presenceRef.setOnDisconnect(false);
-      presenceRef.set(true);
+      presenceRef.set(true);*/
     }
   });
 
@@ -93,11 +97,12 @@ function joinChannel(channel_) {
 var onlineUsers = {};
 function userJoined(snapshot, prevChildName) {
   var user = snapshot.val();
-  if(user.online) {
+    onlineUsers[user.id] = user;
+  /*if(user.online) {
     onlineUsers[user.id] = user;
   } else {
     delete onlineUsers[user.id];
-  }
+  }*/
 
   userList.empty();
   var list = document.createElement('ul');
@@ -106,7 +111,7 @@ function userJoined(snapshot, prevChildName) {
     if(onlineUsers.hasOwnProperty(id)) {
       user = onlineUsers[id];
       var userEntry = document.createElement('li');
-      var txt = JSON.stringify(user);
+      var txt = user["name"]+":  "+user["score"];// JSON.stringify(user);
       userEntry.appendChild(document.createTextNode(txt));
       list.appendChild(userEntry);
     }
