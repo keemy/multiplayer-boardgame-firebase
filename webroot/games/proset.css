@@ -1,0 +1,14 @@
+.setCard{
+	border: 5px solid black;
+	border-radius: 15px;
+	cursor:pointer;
+}
+.selectedCard{
+	border: 5px solid red;
+}
+
+.setCircle {
+	border-radius: 50%;
+	width: 10px;
+	height: 10px;
+}
