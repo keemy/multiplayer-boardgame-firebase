@@ -121,16 +121,11 @@ devin.games.push(function(requestMove) {
     }
   this.applyMove = function(move) {
 	
+	move.sort(compare);
+	for(var a=0; a<move.length; a++){	
+		deck.splice(move[a],1);
+	}
 	
-	if(!isLegalMove(move)){
-		assert(0, 'you broke everything');
-	}
-	else{
-		move.sort(compare);
-		for(var a=0; a<move.length; a++){
-			deck.splice(move[a],1);
-		}
-	}
 	redrawBoard();
   };
 
