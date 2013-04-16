@@ -1,6 +1,6 @@
 (function() {
 
-var braceRef = new Firebase('http://gamma.firebase.com/keemy/brace');
+var braceRef = new Firebase('keemy.firebaseIO.com/');
 
 function stringToBytes(str) {
   var ch, st, re = [];
