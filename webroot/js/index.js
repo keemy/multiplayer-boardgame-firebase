@@ -50,20 +50,22 @@ function joinChannel(channel_) {
   
   
   var lastUserIdRef = channelRef.child('lastUserId');
+  
   lastUserIdRef.transaction(function(lastUserId) {
     return lastUserId+1;
-  }, function(success, snapshot) {
-    if(success) {
+  }, function(error, success, snapshot) {
+    console.log(success)
+	if(success) {
       userId = snapshot.val();
-
+	  
 	  var fname=prompt("name: ", "Player "+userId);
 	  
       userRef = usersRef.child(userId);
       userRef.set({ id: userId, name: fname });
-      userRef.removeOnDisconnect();
-	  /*presenceRef = userRef.child('online');
-      presenceRef.setOnDisconnect(false);
-      presenceRef.set(true);*/
+      userRef.OnDisconnect.remove();
+	  presenceRef = userRef.child('online');
+      presenceRef.OnDisconnect.set(false);
+      presenceRef.set(true);
     }
   });
 
@@ -97,12 +99,12 @@ function joinChannel(channel_) {
 var onlineUsers = {};
 function userJoined(snapshot, prevChildName) {
   var user = snapshot.val();
-    onlineUsers[user.id] = user;
-  /*if(user.online) {
+    
+  if(user.online) {
     onlineUsers[user.id] = user;
   } else {
     delete onlineUsers[user.id];
-  }*/
+  }
 
   userList.empty();
   var list = document.createElement('ul');
@@ -131,7 +133,7 @@ function requestMove(move) {
   // TODO - this stuff is slow, and i don't think it works
   lastMoveIdRef.transaction(function(currLastMoveId) {
     return currLastMoveId + 1;   
-  }, function(success, snapshot) {
+  }, function(__,success, snapshot) {
     if(success) {
       // TODO - i don't see any reason why this would actually provide the
       // atomicity we are looking for
