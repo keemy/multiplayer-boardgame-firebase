@@ -43,10 +43,12 @@ function joinChannel(channel_) {
   channelName = document.location.hash.substring(1);
 
   // TODO - check for valid chars?
+  console.log(channelName)
   channelRef = braceRef.child(channelName);
   usersRef = channelRef.child('users');
   usersRef.on('child_changed', userJoined);
   usersRef.on('child_added', userJoined);
+  
   
   
   var lastUserIdRef = channelRef.child('lastUserId');
@@ -54,17 +56,17 @@ function joinChannel(channel_) {
   lastUserIdRef.transaction(function(lastUserId) {
     return lastUserId+1;
   }, function(error, success, snapshot) {
-    console.log(success)
 	if(success) {
       userId = snapshot.val();
 	  
 	  var fname=prompt("name: ", "Player "+userId);
 	  
+	  console.log(userId)
       userRef = usersRef.child(userId);
       userRef.set({ id: userId, name: fname });
-      userRef.OnDisconnect.remove();
+      userRef.onDisconnect().remove();
 	  presenceRef = userRef.child('online');
-      presenceRef.OnDisconnect.set(false);
+      presenceRef.onDisconnect().set(false);
       presenceRef.set(true);
     }
   });
