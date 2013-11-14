@@ -65,7 +65,7 @@ function joinChannel(channel_) {
       userRef = usersRef.child(userId);
       userRef.set({ id: userId, name: fname });
       userRef.onDisconnect().remove();
-	  presenceRef = userRef.child('online');
+      var presenceRef = userRef.child('online');
       presenceRef.onDisconnect().set(false);
       presenceRef.set(true);
     }
